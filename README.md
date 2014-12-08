@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # FS: a network flow record generator
 
 FS is a network flow record generator.  It contains a discrete event
@@ -85,3 +86,9 @@ You should have received a copy of the GNU General Public License
 along with fs; if not, write to the Free Software
 Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
+=======
+DFS
+===
+
+A network flow Simulator for Datacentres
+>>>>>>> b60ddb3e7f0635e9cee4836e0fb5dd2ae5663c31
