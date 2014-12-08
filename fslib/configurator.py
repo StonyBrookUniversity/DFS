@@ -1,7 +1,7 @@
 #!/usr/bin/python
 
 __author__ = 'jsommers@colgate.edu'
-
+from itertools import chain
 import sys
 from importlib import import_module
 from abc import ABCMeta, abstractmethod
@@ -14,6 +14,8 @@ from fslib.link import Link
 from fslib.common import get_logger
 from fslib.traffic import FlowEventGenModulator
 import fslib.util as fsutil
+from fslib.util import *
+
 
 from networkx import single_source_dijkstra_path, single_source_dijkstra_path_length, read_gml, read_dot
 from networkx.readwrite import json_graph
@@ -106,6 +108,12 @@ class Topology(NullTopology):
                     xnode['dests'] = [ n ]
 
         # install static forwarding table entries to each node
+        #print "Routing Table"
+        #for i in range(1,33):
+        #   for j in range (1,33):
+        #        if j!=i and j==20:
+        #           print 'H'+str(i)+' H'+str(j),
+        #           print networkControlLogic2object.RoutingTable[i-1][j-1][0].first+1
 
         # FIXME: there's a problematic bit of code here that triggers
         # pytricia-related (iterator) core dump
@@ -116,9 +124,16 @@ class Topology(NullTopology):
                     if nodename not in lpmnode['dests']:
                         routes = self.routing[nodename]
                         for d in lpmnode['dests']:
-                            path = routes[d]
-                            nexthop = path[1]
-                            nodeobj.addForwardingEntry(prefix, nexthop)
+                            #path = routes[d]
+                            nexthop = 'H1' #path[1]
+                            #nexthop='H'+str(networkControlLogic2object.RoutingTable[int(nodename.strip('H'))-1][int(d.strip('H'))-1][0].first)
+                            #flowhash=hash(nodename+d)
+                            #print int(nodename.strip('H'))-1,
+                            #print int(d.strip('H'))-1
+                            #nexthopNum=networkControlLogic2module.vectorSizeCalc(networkControlLogic2object.RoutingTable[int(nodename.strip('H'))-1][int(d.strip('H'))-1])
+                            #nexthopIndex=flowhash%nexthopNum
+                            #nexthop='H'+str(networkControlLogic2object.RoutingTable[int(nodename.strip('H'))-1][int(d.strip('H'))-1][nexthopIndex].first+1)
+                            #nodeobj.addForwardingEntry(prefix, nexthop)
                 
         self.owdhash = {}
         for a in self.graph:
@@ -253,7 +268,8 @@ class Topology(NullTopology):
 
             return best
         else:
-            raise InvalidRoutingConfiguration('No route for ' + dest)
+            return
+            #raise InvalidRoutingConfiguration('No route for ' + dest)
 
 
 class FsConfigurator(object):
@@ -448,21 +464,26 @@ class FsConfigurator(object):
             cap = Link.parse_capacity(cap)
             self.graph[a][b][0]['capacity'] = cap
             self.graph[a][b][0]['delay'] = delay
+            #print FsConfigurator.link_subnetter
+            varFsConfiguratorlinksubnetter=chain((FsConfigurator.link_subnetter), (0,)).next()
+            #print varFsConfiguratorlinksubnetter
 
-            ipa,ipb = [ ip for ip in next(FsConfigurator.link_subnetter).iterhosts() ]
+            if varFsConfiguratorlinksubnetter!=0:
+                ipa,ipb = [ ip for ip in varFsConfiguratorlinksubnetter.iterhosts() ]
+                ##ipa,ipb = [ ip for ip in next(FsConfigurator.link_subnetter).iterhosts() ]
 
-            linkfwd = Link(cap, delay, ra, rb)
-            linkrev = Link(cap, delay, rb, ra)
-            self.logger.debug("Adding single dir link: {}, {}, {}, {}".format(str(linkfwd), ipa, ipb, b))
-            ra.add_link(linkfwd, ipa, ipb, rb.name)
-            self.logger.debug("Adding single dir link: {}, {}, {}, {}".format(str(linkrev), ipb, ipa, ra.name))
-            rb.add_link(linkrev, ipb, ipa, ra.name)
-            self.links[(a,b)].append( (linkfwd,ipa,ipb) )
-            self.links[(b,a)].append( (linkrev,ipb,ipa) )
-            linkfwd.set_ingress_ip(ipa)
-            linkfwd.set_egress_ip(ipb)
-            linkrev.set_ingress_ip(ipb)
-            linkrev.set_egress_ip(ipa)
+                linkfwd = Link(cap, delay, ra, rb)
+                linkrev = Link(cap, delay, rb, ra)
+                self.logger.debug("Adding single dir link: {}, {}, {}, {}".format(str(linkfwd), ipa, ipb, b))
+                ra.add_link(linkfwd, ipa, ipb, rb.name)
+                self.logger.debug("Adding single dir link: {}, {}, {}, {}".format(str(linkrev), ipb, ipa, ra.name))
+                rb.add_link(linkrev, ipb, ipa, ra.name)
+                self.links[(a,b)].append( (linkfwd,ipa,ipb) )
+                self.links[(b,a)].append( (linkrev,ipb,ipa) )
+                linkfwd.set_ingress_ip(ipa)
+                linkfwd.set_egress_ip(ipb)
+                linkrev.set_ingress_ip(ipb)
+                linkrev.set_egress_ip(ipa)
 
         for rname,rdict in self.graph.nodes_iter(data=True):
             if 'defaultroute' in rdict:

@@ -4,7 +4,18 @@ __author__ = 'jsommers@colgate.edu'
 
 import random
 from ipaddr import IPv4Network, IPv4Address
-import math 
+import math
+import networkControlLogic2module
+ELEPHANTFLOWSIZE= 10000000
+NETWORKSIZE=64
+FSONum=48
+MirrorNum=10
+
+try:
+    networkControlLogic2object = networkControlLogic2module.networkControlLogic2class()
+    networkControlLogic2object.initilize(NETWORKSIZE,FSONum,MirrorNum,networkControlLogic2module.NoFlowRouting)
+except:
+    print "error in networkControlLogic2object.initilize"
 
 def zipit(xtup):
     assert(len(xtup) == 2)
@@ -53,6 +64,10 @@ def randomchoice(*choices):
     r = random.choice
     while True:
         yield r(choices)
+
+def sequentialchoice(aList):
+    for choice in aList:
+        yield choice
 
 def randomchoicefile(infilename):
     xlist = []
@@ -156,3 +171,13 @@ def default_ip_to_macaddr(ipaddr):
     mac = [ "{:02x}".format(b) for b in reversed(mac) ]
     return ':'.join(mac)
 
+def nodename_to_ipaddr(nodename):
+    '''Give a ipaddress to a node as per the name'''
+    counter=int(nodename.strip().strip('H'))
+    #ipaddr="10.%d.%d.%d"%((counter/64516)%254,(counter/254)%254,counter%254)
+    if counter<254:
+        ipaddr="10.1.1.%d"%(counter%254)
+    else:
+        ipaddr="10.1.%d.%d"%((counter/254)%254 ,counter%254)
+
+    return ipaddr

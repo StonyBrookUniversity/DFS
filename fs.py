@@ -92,16 +92,24 @@ class FsCore(object):
     @property
     def interval(self):
         '''Get the core simulation event interval'''
+	#print "This is the interval " + str(self.__interval) 
         return self.__interval
 
     def after(self, delay, evid, callback, *fnargs):
         '''Schedule an event after delay seconds, identified by
         evid (string), a callback function, and any necessary arguments
         to the function'''
-        if not isinstance(delay, (float,int)):
+	print "Simulation time is " + str(self.__now)
+        if not isinstance(delay, (float,int,long)):
             print "Invalid delay: {}".format(delay)
             sys.exit(-1)
         expire_time = self.now + delay
+
+        #print "now",
+        #print self.now,
+        #print "expire_time",
+        #print expire_time
+
         heappush(self.__heap, (expire_time, evid, callback, fnargs))
 
     def cancel(self, evid):
@@ -158,10 +166,10 @@ def main():
                       default=0, action="count", 
                       help="Turn on debugging output (may be given multiple times to increase debug output)")
     parser.add_option("-t", "--simtime", dest="simtime", 
-                      default=300, type=int,
+                      default=30, type=int,
                       help="Set amount of simulation time (default: 300 sec)")
     parser.add_option("-i", "--interval", dest="interval", 
-                      default=1.0, type=float,
+                      default=1, type=float,
                       help="Set the simulation tick interval (sec) (default: 1 sec)")
     parser.add_option("-c", "--configonly", dest="configonly",
                       default=False, action="store_true",
@@ -173,11 +181,12 @@ def main():
 
     if len(args) != 1:
         print >> sys.stderr,"Usage: %s [options] <scenario.[dot,json]>" % (sys.argv[0])
-        sys.exit(0)
+        #options= {'simtime': 600, 'interval': 0.1, 'configonly': False, 'seed': None, 'debug': 0, 'logfile': ''}
+        args=['../conf/traffic_logic.dot']
 
     random.seed(options.seed)
     fscommon.setup_logger(options.logfile, options.debug)
-
+    print "Simtime",options.simtime
     sim = FsCore(options.interval, endtime=options.simtime, debug=options.debug)
     signal.signal(signal.SIGINT, sim.sighandler)
     sys.path.append(".")

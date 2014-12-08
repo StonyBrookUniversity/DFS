@@ -1,3 +1,4 @@
+from itertools import chain
 from trafgen import TrafficGenerator
 import socket
 import ipaddr
@@ -100,10 +101,16 @@ class HarpoonTrafficGenerator(TrafficGenerator):
             owd = 1.0 
 
         flet.mss = next(self.mssrv)
+	# added by zafar
+	#print "flow mss", flet.mss
+	#print "owd", owd
+	#print "flet.size", flet.size
         p = next(self.lossraterv)
         basertt = owd * 2.0
 
         flowduration, byteemit = self.tcpmodel.model(flet.size, flet.mss, basertt, fscore().interval, p)
+        #print "flowduration", flowduration
+        #print "flet.bytes",flet.bytes
 
         # FIXME: add an end timestamp onto flow to indicate its estimated
         # duration; routers along path can add that end to arrival time to get
@@ -120,13 +127,25 @@ class HarpoonTrafficGenerator(TrafficGenerator):
         # see code in flowemit())
         if self.xopen:
             nextst = next(self.flowstartrv)
-            # print >>sys.stderr, 'scheduling next new harpoon flow at',nextst
+           # print >>sys.stderr, 'scheduling next new harpoon flow at',nextst
             fscore().after(nextst, 'newflow-'+str(self.srcnode), self.newflow)
+	    self.logger.debug("I am in the open-loop")
+	    self.logger.debug("scheduling next harpoon flow at: ")
+	    print "Scheduling next harpoon flow at: ", nextst
+	    print "Flow is : ", str(self.srcnode)
+	    print "Flow dst port is ", str(flet.flowident)
 
 
     def flowemit(self, flowlet, numsent, emitrv, destnode):
         fsend = copy(flowlet)
-        fsend.bytes = int(min(next(emitrv), flowlet.bytes)) 
+        #print "In the flowemit function"
+        varemit=chain((emitrv), (0,)).next() 
+        varflowlet=flowlet.bytes
+        fsend.bytes = int(min(varemit,varflowlet))
+		#print "varemit", varemit
+		#print "varflowlet", varflowlet
+		#print "fsend.bytes", fsend.bytes 
+        ## fsend.bytes = int(min(next(emitrv), flowlet.bytes)) 
         flowlet.bytes -= fsend.bytes
         psize = min(next(self.pktsizerv), flowlet.mss)
         psize = int(max(40, psize))
@@ -168,6 +187,7 @@ class HarpoonTrafficGenerator(TrafficGenerator):
         # if there are more flowlets, schedule the next one
         if flowlet.bytes > 0:
             fscore().after(fscore().interval, "flowemit-{}".format(self.srcnode), self.flowemit, flowlet, numsent, emitrv, destnode)
+	    self.logger.debug("sendin more flowlets")
         else:
             # if there's nothing more to send, remove from active flows 
             del self.activeflows[flowlet.key]
@@ -176,6 +196,7 @@ class HarpoonTrafficGenerator(TrafficGenerator):
             # we've completed the current one.
             if not self.xopen:
                 fscore().after(next(self.flowstartrv), "newflow-{}".format(self.srcnode), self.newflow)
+		self.logger.debug("I am in the closed-loop")
     
     def __makeflow(self):
         while True:
@@ -189,11 +210,15 @@ class HarpoonTrafficGenerator(TrafficGenerator):
                 dstip = str(ipaddr.IPAddress(int(self.dstnet) + random.randint(0, 2)))
 
             ipproto = next(self.ipproto)
+            #print ipproto
             sport = next(self.srcports)
+            #print sport
             dport = next(self.dstports)
+            #print dport
             fsize = int(next(self.flowsizerv))
+            #print fsize
             flet = Flowlet(FlowIdent(srcip, dstip, ipproto, sport, dport), bytes=fsize)
-            
+            #print flet
             flet.iptos = next(self.iptosrv)
             if flet.key not in self.activeflows:
                 break

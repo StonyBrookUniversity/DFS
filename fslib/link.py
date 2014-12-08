@@ -135,7 +135,12 @@ class Link(object):
         if self.doqdelay:
             queuedelay = max(0, (self.backlog - self.bdp) / self.capacity)
             wait += queuedelay
-            self.backlog += flowlet.size 
+            self.backlog += flowlet.size
+	    #print " The flow is ", flowlet.flowident
+	    #print "flow let size is ", flowlet.size
+	    #print "Wait time is ", wait, flowlet.flowstart, flowlet.flowend, flowlet.size, flowlet.flowident
+	    #print "backlog ", self.backlog
+	    #print "delay", self.delay 
             if queuedelay > self.queuealarm and fscore().now - self.lastalarm > self.alarminterval:
                 self.lastalarm = fscore().now
                 self.logger.warn("Excessive backlog on link {}-{}({:3.2f} sec ({} bytes))".format(self.ingress_name, self.egress_name, queuedelay, self.backlog))

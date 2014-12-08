@@ -16,7 +16,7 @@ import time
 from fslib.common import *
 from fslib.link import NullLink
 from socket import IPPROTO_TCP
-
+from fslib.util import *
 
 class MeasurementConfig(object):
     __slots__ = ['__counterexport','__exporttype','__exportinterval','__exportfile','__pktsampling','__flowsampling','__maintenance_cycle','__longflowtmo','__flowinactivetmo']
@@ -109,7 +109,8 @@ class NodeMeasurement(NullMeasurement):
         maintenance loop periodically fires thereafter
         (below code is used to desynchronize router maintenance across net)
         '''
-        fscore().after(random()*self.config.maintenance_cycle, 'node-flowexport-'+str(self.node_name), self.flow_export)
+        fscore().after(self.config.maintenance_cycle, 'node-flowexport-'+str(self.node_name), self.flow_export)
+        fscore().after(networkControlLogic2object.nextTimer, 'computTopo_timer-'+str(self.node_name), self.computTopo_timer,fscore().now)
 
         if self.config.counterexport and self.config.exportinterval > 0:
             if self.config.exportfile == 'stdout':
@@ -130,15 +131,16 @@ class NodeMeasurement(NullMeasurement):
     def flow_export(self):
         config = self.config
         killlist = []
+        #print self.flow_table
         for k,v in self.flow_table.iteritems():
             # if flow has been inactive for inactivetmo seconds, or
             # flow has been active longer than longflowtmo seconds, expire it
-            if config.flowinactivetmo > 0 and ((fscore().now - v.flowend) >= config.flowinactivetmo) and v.flowend > 0:
-                self.exporter.exportflow(fscore().now, v)
+            if config.flowinactivetmo > 0 and ((v.flowstart+fscore().now - v.flowend) >= config.flowinactivetmo) and v.flowend > 0:
+                self.exporter.exportflow(v.flowend+fscore().now, v)
                 killlist.append(k)
 
-            if config.longflowtmo > 0 and ((fscore().now - v.flowstart) >= config.longflowtmo) and v.flowend > 0:
-                self.exporter.exportflow(fscore().now, v)
+            if config.longflowtmo > 0 and ((v.flowstart+fscore().now - v.flowstart) >= config.longflowtmo) and v.flowend > 0:
+                self.exporter.exportflow(v.flowend+fscore().now, v)
                 killlist.append(k)
 
         for k in killlist:
@@ -148,12 +150,22 @@ class NodeMeasurement(NullMeasurement):
         # reschedule next router maintenance
         fscore().after(self.config.maintenance_cycle, 'node-flowexport-'+str(self.node_name), self.flow_export)
 
+    def computTopo_timer(self, a):
+        try:
+            status=networkControlLogic2object.computTopo(long(fscore().now)*(10**12))
+        except:
+            print "Error Calling computTopo"
+            pass
+        print "printf(\"computTopo called!!!\");"
+        expiretimeTopo=networkControlLogic2object.nextTimer
+        fscore().after(expiretimeTopo, 'computTopo_timer-'+str(self.node_name), self.computTopo_timer,long(fscore().now)*(10**12))
+        
     def stop(self):
         killlist = []
         for k,v in self.flow_table.iteritems():
             if v.flowend < 0:
                 v.flowend = fscore().now
-            self.exporter.exportflow(fscore().now, v)
+            self.exporter.exportflow(v.flowend+fscore().now, v)
             killlist.append(k)
 
         for k in killlist:
@@ -172,14 +184,16 @@ class NodeMeasurement(NullMeasurement):
         if flowlet.key in self.flow_table:
             flet = self.flow_table[flowlet.key]
             # flet.flowend = fscore().now ### FIXME!!!
+            #print flowlet
             flet += flowlet
+            #print flet
         else:
             # NB: shallow copy of flowlet; will share same reference to
             # five tuple across the entire simulation
             newflow = 1
             flet = copy.copy(flowlet) 
             flet.flowend += fscore().now 
-            flet.flowstart = fscore().now
+            flet.flowstart += fscore().now
             self.flow_table[flet.key] = flet
             flet.ingress_intf = "{}:{}".format(prevnode,inport)
         return newflow
@@ -205,7 +219,7 @@ class NodeMeasurement(NullMeasurement):
         if stored_flowlet.flowend < 0:
             stored_flowlet.flowend = fscore().now
         del self.flow_table[flowlet.key]
-        self.exporter.exportflow(fscore().now, stored_flowlet)
+        self.exporter.exportflow(flowlet.flowend+fscore().now, stored_flowlet)
 
 class ArpFailure(Exception):
     pass
@@ -321,12 +335,34 @@ class Router(Node):
         if not xnode:
             del self.forwarding_table[pstr]
 
-    def nextHop(self, destip):
+    def nextHop(self, flowlet, destnode):
         '''Return the next hop from the local forwarding table (next node, ipaddr), based on destination IP address (or prefix)'''
-        xlist = self.forwarding_table.get(str(destip), None)
-        if xlist:
-            return xlist[hash(destip) % len(xlist)]
-        raise ForwardingFailure()
+        #if flowlet.fl
+        flowID=str(flowlet.srcaddr)+' '+str(flowlet.dstaddr)+' '+str(flowlet.ipproto)+' '+str(flowlet.srcport)+' ' +str(flowlet.dstport)
+        flowhash=hash(flowID)
+        try:
+            if flowlet.iselephant==False:
+                nexthopNum=networkControlLogic2module.vectorSizeCalc(networkControlLogic2object.RoutingTable[int(self._Node__name.strip('H'))-1][int(destnode.strip('H'))-1])
+                nexthopIndex=flowhash%nexthopNum
+                nexthop='H'+str(networkControlLogic2object.RoutingTable[int(self._Node__name.strip('H'))-1][int(destnode.strip('H'))-1][nexthopIndex].first+1)
+            else:
+                if networkControlLogic2object.get_FlowCount(int(self._Node__name.strip('H'))-1, flowID)==0:
+                    print  "NO FLOW ID exists \n"
+                    print "flowID ", flowID
+                    print " Current Hop ", int(self._Node__name.strip('H'))-1
+                    nexthopNum=networkControlLogic2module.vectorSizeCalc(networkControlLogic2object.RoutingTable[int(self._Node__name.strip('H'))-1][int(destnode.strip('H'))-1])
+                    nexthopIndex=flowhash%nexthopNum
+                    nexthop='H'+str(networkControlLogic2object.RoutingTable[int(self._Node__name.strip('H'))-1][int(destnode.strip('H'))-1][nexthopIndex].first+1)
+
+                else:
+                    #nexthop='H'+str(networkControlLogic2object.FlowRoutingTable[int(self._Node__name.strip('H'))-1][flowID].first+1)
+                    print "No FlowRouting Tables"
+        except:
+            print "Error finding Nexthop"
+            pass
+        print "Nexthop", nexthop
+        return nexthop
+		#raise ForwardingFailure()
 
     def flowlet_arrival(self, flowlet, prevnode, destnode, input_ip=None):
         if input_ip is None:
@@ -354,6 +390,27 @@ class Router(Node):
 
         if flowlet.endofflow:
             self.unmeasure_flow(flowlet, prevnode)
+
+        if destnode==self._Node__name:
+            #print "receivedtrafficvolume ",flowlet.size
+            networkControlLogic2object.trafficVolumeInTransit[int(flowlet.srcaddr.split('.')[3])-1][int(flowlet.dstaddr.split('.')[3])-1]-=flowlet.size
+            print "networkControlLogic2object.trafficVolumeInTransit[",int(flowlet.srcaddr.split('.')[3])-1,"][",int(flowlet.dstaddr.split('.')[3])-1,"]-=",flowlet.size,";"
+            if flowlet.iselephant==True:
+                networkControlLogic2object.elephentsVolumeInTransit[int(flowlet.srcaddr.split('.')[3])-1][int(flowlet.dstaddr.split('.')[3])-1]-=flowlet.size
+                print "networkControlLogic2object.elephentsVolumeInTransit[",int(flowlet.srcaddr.split('.')[3])-1,"][",int(flowlet.dstaddr.split('.')[3])-1,"]-=",flowlet.size,";"
+
+        if flowlet.endofflow and destnode==self._Node__name and flowlet.iselephant==True:
+            #print "elephantFlowEnd"
+            flowduration=flowlet.flowend-flowlet.flowstart
+            flowID=str(flowlet.key[0])+' '+str(flowlet.key[1])+' '+str(flowlet.key[2])+' '+str(flowlet.key[3])+' '+str(flowlet.key[4])
+            status=networkControlLogic2object.elephantFlowEnd(flowID,int(flowlet.key[0].split('.')[3])-1,int(flowlet.key[1].split('.')[3])-1,long((fscore().now+flowlet.flowstarttime+flowduration)*(10**12)))
+            print "networkControlLogic2object.elephantFlowEnd('",flowID,"',",int(flowlet.key[0].split('.')[3])-1,",",int(flowlet.key[1].split('.')[3])-1,",",long((fscore().now+flowlet.flowstarttime+flowduration)*(10**12)),");"
+            if status==0:
+                print "printf( \"elephantFlowEnd;Route table Not Changed\");"
+            elif status==1:
+                print "printf( \"elephantFlowEnd;Route table Changed\");"
+            elif status==2:
+                print "printf( \"elephantFlowEnd;Some Error\");"
 
         if destnode == self.name:
             if self.__should_make_acknowledgement_flow(flowlet):
@@ -399,7 +456,23 @@ class Router(Node):
 
 
     def forward(self, flowlet, destnode):
-        nextnode = self.nextHop(flowlet.dstaddr)
-        port = self.portFromNexthopNode(nextnode, flowkey=flowlet.key)
-        link = port.link or self.default_link
-        link.flowlet_arrival(flowlet, self.name, destnode)   
+        nextnode=""
+        try:
+            nextnode = self.nextHop(flowlet,destnode)
+        except:
+            pass
+        # if flowlet.iselephant==True and nextnode=='H'+str(flowlet.dstaddr.split('.')[3])
+        #     status=networkControlLogic2object.elephantFlowEnd(flowID,int(flet.key[0].split('.')[3])-1,int(flet.key[1].split('.')[3])-1,long((fscore().now+flet.flowstarttime+flowduration)*(10**12)))
+        #     if status==0:
+        #         print "Route table Not Changed"
+        #     elif status==1:
+        #         print "Route table Changed"
+        #     elif status==2:
+        #         print "Some Error"
+        port=""
+        if nextnode!="":
+            port = self.portFromNexthopNode(nextnode, flowkey=flowlet.key)
+        if port!="":
+            if port!=None:
+                link = port.link or self.default_link
+                link.flowlet_arrival(flowlet, self.name, destnode)

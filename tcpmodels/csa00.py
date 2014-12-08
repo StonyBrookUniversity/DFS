@@ -72,7 +72,7 @@ def model(bytes, mss, rtt, interval, p):
     # eq(24): expected time to send remaining data in congestion avoidance
     etca = edca/R
 
-    etdelack = 0.1
+    etdelack = 0.0
     
     # eq(25): expected time for data transfer
     flowduration = etss + etloss + etca + etdelack

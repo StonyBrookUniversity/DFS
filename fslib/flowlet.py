@@ -47,12 +47,13 @@ class FlowIdent(object):
 class Flowlet(object):
     __slots__ = ['__srcmac','__dstmac','__mss','__iptos','__pkts',
                  '__bytes','__flowident','__tcpflags','__ackflow',
-                 '__flowstart','__flowend','ingress_intf']
+                 '__flowstart','__flowstarttime','__flowend','ingress_intf','iselephant']
     def __init__(self, ident, 
                  srcmac=None, dstmac=None,
-                 pkts=0, bytes=0, tcpflags=0):
+                 pkts=0, bytes=0, time=0,tcpflags=0):
         self.__flowident = ident
         self.__flowstart = -1.0
+        self.__flowstarttime = time
         self.__flowend = -1.0
         self.__srcmac = srcmac 
         self.__dstmac = dstmac 
@@ -63,6 +64,7 @@ class Flowlet(object):
         self.mss = 1500
         self.tcpflags = 0x0
         self.ackflow = False
+        self.iselephant= False
 
     @property
     def flowident(self):
@@ -215,6 +217,10 @@ class Flowlet(object):
     @property
     def flowstart(self):
         return self.__flowstart
+
+    @property
+    def flowstarttime(self):
+        return self.__flowstarttime
 
     @flowstart.setter
     def flowstart(self, fstart):

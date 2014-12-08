@@ -10,29 +10,32 @@ graph test {
     longflowtmo=60
     flowinactivetmo=60
 
-    a [ 
+    H1 [ 
         type="OpenflowSwitch"
         controller="controller"
         autoack="False"
-        ipdests="10.1.0.0/16"
+        ipdests="10.1.1.1"
         traffic="m1"
-        m1="modulator start=5 generator=s1 profile=((3600,),(5,))"
-        s1="harpoon ipsrc=10.1.1.0/24 ipdst=10.3.1.0/24 flowsize=pareto(5000,1.2) flowstart=exponential(10.0) ipproto=randomchoice(6) sport=randomchoice(22,80,443) dport=randomunifint(1025,65535) lossrate=randomchoice(0.001)"
+        m1="modulator start=0.0 generator=s1 profile=((4,),(1,))"
+        s1="matrix flowstart=randomchoice(1) ipproto=randomchoice(6) sport=randomunifint(1025,65535) dport=randomunifint(1025,65535) lossrate=randomchoice(0.001) matrix=conf/input.matrix.backup"
     ];
 
-    b [ 
+    H2 [
         type="OpenflowSwitch"
         controller="controller"
         autoack="False"
-        ipdests="10.2.0.0/16" 
+        ipdests="10.1.1.2"
+        traffic="m1"
+        m1="modulator start=0.0 generator=s1 profile=((3,),(1,))"
+        s1="matrix flowstart=randomchoice(1) ipproto=randomchoice(6) sport=randomunifint(1025,65535) dport=randomunifint(1025,65535) lossrate=randomchoice(0.001) matrix=conf/input.matrix.backup"
     ];
 
-    c [ 
+     H3 [
         type="OpenflowSwitch"
         controller="controller"
         autoack="False"
-        ipdests="10.3.0.0/16 10.4.0.0/16 10.0.0.0/8" 
-    ];
+        ipdests="10.1.1.3"
+     ];
 
     controller [
         type="OpenflowController"
@@ -40,13 +43,12 @@ graph test {
     ];
 
 
-    // data path links 
-    a -- b [weight=10, capacity=100000000, delay=0.043];
-    b -- c [weight=10, capacity=100000000, delay=0.031];
-    a -- c [weight=30, capacity=100000000, delay=0.123];
+    // data path links
+    H1 -- H2 [weight=10, capacity=100000000, delay=0.043];
+    H2 -- H3 [weight=10, capacity=100000000, delay=0.043];
 
     // control links between ofcontroller and each ofswitch
-    a -- controller [ capacity=1000000000, delay=0.01 ]
-    b -- controller [ capacity=1000000000, delay=0.01 ]
-    c -- controller [ capacity=1000000000, delay=0.01 ]
+    H1 -- controller [ capacity=1000000000, delay=0.01 ]
+    H2 -- controller [ capacity=1000000000, delay=0.01 ]
+    H3 -- controller [ capacity=1000000000, delay=0.01 ]
 }
