@@ -1,0 +1,26 @@
+# This folder contains scripts to generate different data center topologies and create shortest path routes in the network
+
+# The script below creates data center topologies: tree, fattree, complete graph.
+# It takes as input the topology name: topologyname(e.g, tree)  k(switch degree) N(no of switches)
+# The output is a topology file, in the form of links in the network
+
+perl createdcntopo.pl tree 8 0
+
+
+
+# The script below creates short path routes given a topology file
+# Takes as input the topology file from the previous script and the outputfile which contains the routes between every pair of top of the rack switch
+
+
+perl routingdcn.pl  tree8 routingtree8
+
+
+# The script below creates jellfish topology and our own fso-based dynamic topology
+# input: k(# of servers) D(flexible degree) C(# of steiner switches) R(# of racks) outputfile inputtraffic_matrix
+
+perl create_jellyfish_fso.pl 
+
+
+# The script below creates multiple short path routes given a topology file
+# Takes as input the topology file from the previous script and the outputfile which contains the routes between every pair of top of the rack switch
+perl multi_path_routing.pl

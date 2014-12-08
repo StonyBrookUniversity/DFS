@@ -1,0 +1,21 @@
+set terminal postscript enhanced eps color "Helvetica" 24
+set output "fct_long_flows.eps"
+
+set xrange [-0.5:2.5] 
+set yrange [8:21]
+set boxwidth 0.1 
+#set log y
+set size ratio 0.60
+set key horizontal 
+#set key outside
+set key at 2.5,23
+#set key at 0.8,100
+#set key font ",9" 
+set ylabel "Flow Completion Time (s)" offset 2,0
+set xtics font ",20"
+set xtics border in scale 1,0.5 nomirror   offset character 0,0,0
+#set style fill solid  border rgb "black" 12 
+set style fill  solid 1.00 border -1
+
+plot "stats_jellyfish_l" using ($1-.075):3:2:6:5 lw 2 lt 1 lc rgb "green" title "Jellyfish" with candlesticks whiskerbars, '' using ($1-.075):4:4:4:4 with candlesticks lt -1 lw 2 notitle, "stats_fso_16_l" using ($1+.075):3:2:6:5:xtic(7) lw 2 lt 1 lc rgb "blue" title "FSO(16)" with candlesticks whiskerbars, '' using ($1+.075):4:4:4:4 with candlesticks lt -1 lw 2 notitle, "stats_fso_8_l" using ($1+.25):3:2:6:5 lw 2 lt 1 lc rgb "purple" title "FSO(8)"  with candlesticks whiskerbars, '' using ($1+.25):4:4:4:4 with candlesticks lt -1 lw 2 notitle, "stats_fso_0_l" using ($1+0.425):3:2:6:5 lw 2 lt 1 lc rgb "yellow" title "FSO(0)"  with candlesticks whiskerbars, '' using ($1+.425):4:4:4:4 with candlesticks lt -1 lw 2 notitle
+!epstopdf fct_long_flows.eps

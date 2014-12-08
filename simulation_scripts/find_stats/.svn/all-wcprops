@@ -1,0 +1,53 @@
+K 25
+svn:wc:ra_dav:version-url
+V 57
+/repos/laserdc/!svn/ver/223/simulation_scripts/find_stats
+END
+pure_cdf.pl
+K 25
+svn:wc:ra_dav:version-url
+V 69
+/repos/laserdc/!svn/ver/222/simulation_scripts/find_stats/pure_cdf.pl
+END
+find_incomplete_new.pl
+K 25
+svn:wc:ra_dav:version-url
+V 80
+/repos/laserdc/!svn/ver/221/simulation_scripts/find_stats/find_incomplete_new.pl
+END
+find_incomplete_short_flows.pl
+K 25
+svn:wc:ra_dav:version-url
+V 88
+/repos/laserdc/!svn/ver/221/simulation_scripts/find_stats/find_incomplete_short_flows.pl
+END
+find_flow_size_time_completed.pl
+K 25
+svn:wc:ra_dav:version-url
+V 90
+/repos/laserdc/!svn/ver/221/simulation_scripts/find_stats/find_flow_size_time_completed.pl
+END
+find_duplicates.pl
+K 25
+svn:wc:ra_dav:version-url
+V 76
+/repos/laserdc/!svn/ver/221/simulation_scripts/find_stats/find_duplicates.pl
+END
+find_flow_size_completed.pl
+K 25
+svn:wc:ra_dav:version-url
+V 85
+/repos/laserdc/!svn/ver/221/simulation_scripts/find_stats/find_flow_size_completed.pl
+END
+find_stats.pl
+K 25
+svn:wc:ra_dav:version-url
+V 71
+/repos/laserdc/!svn/ver/223/simulation_scripts/find_stats/find_stats.pl
+END
+README
+K 25
+svn:wc:ra_dav:version-url
+V 64
+/repos/laserdc/!svn/ver/223/simulation_scripts/find_stats/README
+END

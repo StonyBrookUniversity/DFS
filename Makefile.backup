@@ -1,0 +1,6 @@
+boostexample.so: boostexample.o
+	g++ -shared -o myexample.so boostexample.o -lpython2.7 -lboost_python -lboost_system
+boostexample.o: 
+	g++ -o boostexample.o -c boostexample.cpp -Wall -fPIC -I/usr/include/python2.7
+clean:
+	rm boostexample.so boostexample.o	

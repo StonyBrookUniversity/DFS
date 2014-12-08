@@ -1,0 +1,7 @@
+# To find the cdf 
+# In pure_cdf set the max variable to the max value of the data set
+perl pure_cdf.pl input_file > outputfile
+
+
+# To find the min, 25 percentile, median, 75 percentile and max
+perl find_stats.pl input_file outputfile

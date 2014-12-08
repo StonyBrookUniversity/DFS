@@ -1,0 +1,22 @@
+Details of fields
+
+textexport routername  timestamp  flowstart  flowend   srcaddr:srcport->dstaddr:dstport   protocolname    type-of-service  ingress-interface    pkts   bytes flag
+textexport H7          1.024487   0.024487   2.024487  10.12.0.2:443->10.17.0.2:53300     tcp             0x0              harpoon:172.16.0.197 4      218   FSA
+textexport H7          1.083502   0.083502   2.083502 10.12.0.2:22->10.17.0.1:52625 tcp 0x0 harpoon:172.16.0.197 4 506 FSA
+textexport H7          1.246407   0.246407   2.246407 10.12.0.2:80->10.17.0.1:63872 tcp 0x0 harpoon:172.16.0.197 4 452 FSA
+
+1.000 harpoon->a 2353567 bytes 1818 pkts 102 flows
+2.000 harpoon->a 3297585 bytes 2423 pkts 92 flows
+3.000 harpoon->a 5888232 bytes 4162 pkts 99 flows
+4.000 harpoon->a 5968197 bytes 4241 pkts 106 flows
+
+record = 'textexport %s %0.06f %s\n' % (self.routername, ts, str(flet))
+
+def __str__(self):
+	return "%0.06f %0.06f %s:%d->%s:%d %s 0x%0x %s %d %d %s" % (self.flowstart, self.flowend, self.srcaddr, self.srcport, self.dstaddr, self.dstport, self.ipprotoname, self.iptos, self.ingress_intf, self.pkts, self.bytes, self.tcpflagsstr)
+
+def exportflow(self, ts, flet):
+	flowrec = cflow.packrecord(srcaddr=int(IPAddress(flet.srcaddr)), dstaddr=int(IPAddress(flet.dstaddr)), pkts=flet.pkts, bytes=flet.size, start=int(flet.flowstart), end=int(flet.flowend), srcport=flet.srcport, dstport=flet.dstport, tcpflags=flet.tcpflags, ipproto=flet.ipproto, iptos=flet.iptos)
+	self.outfile.write(flowrec)
+	
+

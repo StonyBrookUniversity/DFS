@@ -1,0 +1,13 @@
+graph test {
+flowexport=text
+H1 [
+	m="modulator start=0.0 generator=s profile=((4,),(1,))"
+	s="matrix flowstart=randomchoice(1) ipproto=randomchoice(6) sport=randomunifint(1025,65535) dport=randomunifint(1025,65535) lossrate=randomchoice(0.001) matrix=conf/input.matrix"
+	traffic="m"
+	ipdests="10.1.1.1"
+	autoack="False"
+];
+H1 -- H2[weight=10, capacity=1000000000, delay=0.001]
+H1 -- H2[weight=10, capacity=1000000000, delay=0.001]
+}
+
